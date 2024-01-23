@@ -22,13 +22,16 @@ myNoteRouter.post('/jwt', async (req, res) => {
   }
   const session = jsonwebtoken.sign(userData, process.env.JWT_SECRET) // HS256
 
-  // 프론트 쿠키 전송
-  res.cookie('my-note-session', session, {
+  const cookieOptions = {
     maxAge: 1000 * 60 * 60 * 24 * 365, // 1년
-    // httpOnly: true, // 백엔드에서만 쿠키 조작 가능
+    httpOnly: true, // 백엔드에서만 쿠키 조작 가능
     sameSite: 'none', // cors 에서도 쿠키 전송 가능
-    // secure: true, // https 에서만 동작
-  })
+    secure: true, // https 에서만 동작
+    partitioned: true, // 새롭게 추가된 쿠키 옵션(다른 사이트에서 내 쿠키 사용 못함)
+  }
+
+  // 프론트 쿠키 전송
+  res.cookie('my-note-session', session, cookieOptions)
 
   res.send({ session, userData })
 })
@@ -37,8 +40,9 @@ myNoteRouter.post('/jwt', async (req, res) => {
 // 백엔드에서 credential 검증 > 프론트에서 보낸 jwt 유효한지 파악 >
 // 구글이 검증해줘야함. > google-auth-library 설치 > 검증
 
-myNoteRouter.get('/sessionCheck', (req, res) => {
+myNoteRouter.post('/sessionCheck', (req, res) => {
   const session = req.cookies['my-note-session']
+  console.log('# sessionCheck req.cookies', req.cookies['my-note-session'])
   if (!session) return res.send({ session: false })
 
   try {
