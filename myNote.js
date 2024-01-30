@@ -1,10 +1,10 @@
-import { Router } from 'express'
-import { OAuth2Client } from 'google-auth-library'
-import jsonwebtoken from 'jsonwebtoken'
+import { Router } from "express"
+import { OAuth2Client } from "google-auth-library"
+import jsonwebtoken from "jsonwebtoken"
 
 export const myNoteRouter = Router()
 
-myNoteRouter.post('/jwt', async (req, res) => {
+myNoteRouter.post("/jwt", async (req, res) => {
   const jwt = req.body.jwt
 
   // jwt 검증
@@ -25,13 +25,13 @@ myNoteRouter.post('/jwt', async (req, res) => {
   const cookieOptions = {
     maxAge: 1000 * 60 * 60 * 24 * 365, // 1년
     httpOnly: true, // 백엔드에서만 쿠키 조작 가능
-    sameSite: 'none', // cors 에서도 쿠키 전송 가능
+    sameSite: "none", // cors 에서도 쿠키 전송 가능
     secure: true, // https 에서만 동작
     partitioned: true, // 새롭게 추가된 쿠키 옵션(다른 사이트에서 내 쿠키 사용 못함)
   }
 
   // 프론트 쿠키 전송
-  res.cookie('my-note-session', session, cookieOptions)
+  res.cookie("my-note-session", session, cookieOptions)
 
   res.send({ session, userData })
 })
@@ -40,9 +40,9 @@ myNoteRouter.post('/jwt', async (req, res) => {
 // 백엔드에서 credential 검증 > 프론트에서 보낸 jwt 유효한지 파악 >
 // 구글이 검증해줘야함. > google-auth-library 설치 > 검증
 
-myNoteRouter.post('/sessionCheck', (req, res) => {
-  const session = req.cookies['my-note-session']
-  console.log('# sessionCheck req.cookies', req.cookies['my-note-session'])
+myNoteRouter.post("/sessionCheck", (req, res) => {
+  const session = req.cookies["my-note-session"]
+  console.log("# sessionCheck req.cookies", req.cookies["my-note-session"])
   if (!session) return res.send({ session: false })
 
   try {
@@ -50,5 +50,19 @@ myNoteRouter.post('/sessionCheck', (req, res) => {
     res.send({ session: true, userData })
   } catch (e) {
     res.send({ session: false })
+  }
+})
+
+myNoteRouter.post("/logout", (req, res) => {
+  const session = req.cookies["my-note-session"]
+  console.log("# sessionCheck req.cookies", req.cookies["my-note-session"])
+  if (!session) return res.send({ session: false })
+
+  try {
+    const userData = jsonwebtoken.verify(session, process.env.JWT_SECRET)
+    res.clearCookie("my-note-session")
+    res.send({ clearSession: true })
+  } catch (e) {
+    res.send({ clearSession: false })
   }
 })
